@@ -4,3 +4,5 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+objc2-foundation = { version = "0.2", features = ["NSString", "NSURL"] }
+objc2-app-kit = { version = "0.2", features = ["NSWorkspace"] }

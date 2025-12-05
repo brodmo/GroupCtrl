@@ -1,3 +1,12 @@
+use crate::app::App;
+use crate::open::Open;
+
+mod app;
+mod open;
+
 fn main() {
-    println!("Hello, world!");
+    let finder = App {
+        bundle_id: "com.apple.Finder".to_string(),
+    };
+    finder.open()
 }
