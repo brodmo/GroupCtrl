@@ -17,7 +17,7 @@ pub trait Open {
 
 impl Open for App {
     fn open(&self) -> Result<(), OpenAppError> {
-        println!("opening {self:?}");
+        println!("opening '{self}'");
         let workspace = NSWorkspace::sharedWorkspace();
         let bundle_id = NSString::from_str(self.bundle_id.as_str());
         let Some(app_url) = workspace.URLForApplicationWithBundleIdentifier(&bundle_id) else {
