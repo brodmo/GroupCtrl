@@ -17,10 +17,10 @@ struct GroupCtrl {
 impl GroupCtrl {
     fn listen_for_hotkeys() {
         loop {
-            if let Ok(event) = GlobalHotKeyEvent::receiver().recv() {
-                if event.state == global_hotkey::HotKeyState::Pressed {
-                    App::new("com.apple.finder").open().unwrap();
-                }
+            if let Ok(event) = GlobalHotKeyEvent::receiver().recv()
+                && event.state == global_hotkey::HotKeyState::Pressed
+            {
+                App::new("com.apple.finder").open().unwrap();
             }
         }
     }
@@ -39,7 +39,7 @@ impl GroupCtrl {
 }
 
 impl eframe::App for GroupCtrl {
-    fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+    fn update(&mut self, _ctx: &egui::Context, _frame: &mut eframe::Frame) {
         // draw UI
     }
 }
