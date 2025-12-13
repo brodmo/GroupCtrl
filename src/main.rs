@@ -1,5 +1,6 @@
 mod action;
 mod app;
+mod hotkey;
 mod hotkeys;
 mod open;
 mod util;
@@ -10,10 +11,11 @@ use crate::hotkeys::HotkeyManager;
 use anyhow::Result;
 use eframe::egui;
 use eframe::egui::Button;
-use global_hotkey::hotkey::{Code, HotKey, Modifiers};
+use global_hotkey::hotkey::{Code, Modifiers};
 use std::fs;
 use std::fs::File;
 
+use crate::hotkey::Hotkey;
 use simplelog::*;
 
 struct GroupCtrl {
@@ -28,7 +30,8 @@ impl GroupCtrl {
             error: None,
         }
     }
-    fn handle_register_click(&mut self, hotkey: HotKey, app: App) {
+
+    fn handle_register_click(&mut self, hotkey: Hotkey, app: App) {
         let result = self
             .hotkey_manager
             .bind_hotkey(hotkey, Action::OpenApp(app));
@@ -53,7 +56,7 @@ impl eframe::App for GroupCtrl {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         egui::CentralPanel::default().show(ctx, |ui| {
             let app = App::new("com.apple.finder");
-            let hotkey = HotKey::new(Some(Modifiers::SUPER | Modifiers::SHIFT), Code::KeyF);
+            let hotkey = Hotkey::new(Modifiers::SUPER | Modifiers::SHIFT, Code::KeyF);
             ui.horizontal(|ui| {
                 ui.label(app.to_string());
                 ui.label(hotkey.to_string())

@@ -1,8 +1,8 @@
 use crate::action::Action;
+use crate::hotkey::Hotkey;
 use anyhow::Result;
 use bimap::BiMap;
 use crossbeam::channel;
-use global_hotkey::hotkey::HotKey;
 use global_hotkey::{GlobalHotKeyEvent, GlobalHotKeyManager};
 use log::{error, info};
 use std::collections::HashMap;
@@ -40,7 +40,7 @@ pub fn listen_for_hotkeys(binding_receiver: channel::Receiver<HotkeyBinding>) {
 }
 
 pub struct HotkeyManager {
-    bindings: BiMap<HotKey, Action>,
+    bindings: BiMap<Hotkey, Action>,
     global_manager: GlobalHotKeyManager,
     binding_sender: channel::Sender<HotkeyBinding>,
 }
@@ -68,7 +68,7 @@ impl HotkeyManager {
     }
 
     /// Returns existing bind if hotkey is already in use
-    pub fn bind_hotkey(&mut self, hotkey: HotKey, action: Action) -> Result<Option<Action>> {
+    pub fn bind_hotkey(&mut self, hotkey: Hotkey, action: Action) -> Result<Option<Action>> {
         info!("Binding {hotkey} to '{action}'");
         if let Some(previous_action) = self.bindings.get_by_left(&hotkey) {
             if *previous_action == action {
@@ -81,12 +81,12 @@ impl HotkeyManager {
             self.unbind_hotkey(previous_hotkey)?
         }
         self.bindings.insert(hotkey, action.clone());
-        self.global_manager.register(hotkey)?;
+        self.global_manager.register(hotkey.0)?;
         self.binding_sender.send((hotkey.id(), Some(action)))?;
         Ok(None)
     }
 
-    pub fn unbind_hotkey(&self, hotkey: &HotKey) -> Result<()> {
+    pub fn unbind_hotkey(&self, hotkey: &Hotkey) -> Result<()> {
         Ok(self.binding_sender.send((hotkey.id(), None))?)
     }
 }
@@ -104,7 +104,7 @@ mod tests {
         // Arrange
         let (tx, rx) = channel::unbounded();
         let mut manager = HotkeyManager::new_with_sender(tx).unwrap();
-        let hotkey = HotKey::new(Some(Modifiers::SUPER | Modifiers::SHIFT), Code::KeyF);
+        let hotkey = Hotkey::new(Modifiers::SUPER | Modifiers::SHIFT, Code::KeyF);
         let action = Action::OpenApp(App::new("com.apple.finder"));
         // Act
         let result = manager.bind_hotkey(hotkey, action.clone()).unwrap();
@@ -120,7 +120,7 @@ mod tests {
         // Arrange
         let (tx, rx) = channel::unbounded();
         let mut manager = HotkeyManager::new_with_sender(tx).unwrap();
-        let hotkey = HotKey::new(Some(Modifiers::SUPER | Modifiers::SHIFT), Code::KeyF);
+        let hotkey = Hotkey::new(Modifiers::SUPER | Modifiers::SHIFT, Code::KeyF);
         let action = Action::OpenApp(App::new("com.apple.finder"));
         // Act
         manager.bind_hotkey(hotkey, action.clone()).unwrap();
@@ -137,7 +137,7 @@ mod tests {
         // Arrange
         let (tx, rx) = channel::unbounded();
         let mut manager = HotkeyManager::new_with_sender(tx).unwrap();
-        let hotkey = HotKey::new(Some(Modifiers::SUPER | Modifiers::SHIFT), Code::KeyF);
+        let hotkey = Hotkey::new(Modifiers::SUPER | Modifiers::SHIFT, Code::KeyF);
         let old_action = Action::OpenApp(App::new("com.apple.finder"));
         let new_action = Action::OpenApp(App::new("com.apple.safari"));
         // Act
@@ -155,8 +155,8 @@ mod tests {
         // Arrange
         let (tx, rx) = channel::unbounded();
         let mut manager = HotkeyManager::new_with_sender(tx).unwrap();
-        let old_hotkey = HotKey::new(Some(Modifiers::SUPER | Modifiers::SHIFT), Code::KeyF);
-        let new_hotkey = HotKey::new(Some(Modifiers::SUPER | Modifiers::SHIFT), Code::KeyG);
+        let old_hotkey = Hotkey::new(Modifiers::SUPER | Modifiers::SHIFT, Code::KeyF);
+        let new_hotkey = Hotkey::new(Modifiers::SUPER | Modifiers::SHIFT, Code::KeyG);
         let action = Action::OpenApp(App::new("com.apple.finder"));
         // Act
         manager.bind_hotkey(old_hotkey, action.clone()).unwrap();
@@ -176,7 +176,7 @@ mod tests {
         // Arrange
         let (tx, rx) = channel::unbounded();
         let mut manager = HotkeyManager::new_with_sender(tx).unwrap();
-        let hotkey = HotKey::new(Some(Modifiers::SUPER | Modifiers::SHIFT), Code::KeyF);
+        let hotkey = Hotkey::new(Modifiers::SUPER | Modifiers::SHIFT, Code::KeyF);
         let action = Action::OpenApp(App::new("com.apple.finder"));
         manager.bind_hotkey(hotkey, action).unwrap();
         rx.try_recv().unwrap(); // Clear the bind message
