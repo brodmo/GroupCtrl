@@ -1,13 +1,11 @@
 mod action;
 mod app;
-mod hotkey;
 mod hotkeys;
 mod open;
 mod util;
 
 use crate::action::Action;
 use crate::app::App;
-use crate::hotkeys::HotkeyManager;
 use anyhow::Result;
 use eframe::egui;
 use eframe::egui::Button;
@@ -15,7 +13,7 @@ use global_hotkey::hotkey::{Code, Modifiers};
 use std::fs;
 use std::fs::File;
 
-use crate::hotkey::Hotkey;
+use crate::hotkeys::{Hotkey, HotkeyManager};
 use simplelog::*;
 
 struct GroupCtrl {
