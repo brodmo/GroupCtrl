@@ -78,17 +78,14 @@ impl HotkeyManager {
             info!("Hotkey is already assigned to {previous_action}");
             return Ok(Some(previous_action.clone()));
         }
-        if let Some(previous_hotkey) = self.bindings.get_by_right(&action) {
-            self.unbind_hotkey(previous_hotkey)?
+        if let Some((previous_hotkey, _)) = self.bindings.remove_by_right(&action) {
+            self.global_manager.unregister(previous_hotkey.0)?;
+            self.binding_sender.send((previous_hotkey.id(), None))?
         }
         self.bindings.insert(hotkey, action.clone());
         self.global_manager.register(hotkey.0)?;
         self.binding_sender.send((hotkey.id(), Some(action)))?;
         Ok(None)
-    }
-
-    pub fn unbind_hotkey(&self, hotkey: &Hotkey) -> Result<()> {
-        Ok(self.binding_sender.send((hotkey.id(), None))?)
     }
 }
 
@@ -168,23 +165,6 @@ mod tests {
         assert_eq!(rx.try_recv().unwrap(), old_binding);
         assert_eq!(rx.try_recv().unwrap(), (old_hotkey.id(), None)); // Unbind
         assert_eq!(rx.try_recv().unwrap(), (new_hotkey.id(), Some(action)));
-        assert!(rx.try_recv().is_err()); // No dangling message
-    }
-
-    #[test]
-    #[serial]
-    fn unbind_hotkey() {
-        // Arrange
-        let (tx, rx) = channel::unbounded();
-        let mut manager = HotkeyManager::new_with_sender(tx).unwrap();
-        let hotkey = Hotkey::new(Modifiers::SUPER | Modifiers::SHIFT, Code::KeyF);
-        let action = Action::OpenApp(App::new("com.apple.finder"));
-        manager.bind_hotkey(hotkey, action).unwrap();
-        rx.try_recv().unwrap(); // Clear the bind message
-        // Act
-        manager.unbind_hotkey(&hotkey).unwrap();
-        // Assert
-        assert_eq!(rx.try_recv().unwrap(), (hotkey.id(), None));
         assert!(rx.try_recv().is_err()); // No dangling message
     }
 }
