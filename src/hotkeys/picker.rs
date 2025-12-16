@@ -2,6 +2,7 @@ use crate::action::Action::OpenApp;
 use crate::app::App;
 use crate::hotkeys::convert::convert_hotkey;
 use crate::hotkeys::{Hotkey, HotkeyManager};
+use global_hotkey::hotkey::Code;
 use iced::keyboard;
 use iced::keyboard::Event;
 use iced::widget::{Button, button, text};
@@ -27,11 +28,14 @@ impl HotkeyPicker {
             }
             Message::KeyPress(hotkey) => {
                 if self.recording {
-                    self.picked = Some(hotkey);
                     self.recording = false;
                     hotkey_manager.unpause_hotkeys().unwrap();
+                    if hotkey.0.key == Code::Escape {
+                        return;
+                    }
                     let action = OpenApp(App::new("com.apple.finder"));
                     hotkey_manager.bind_hotkey(hotkey, action).unwrap();
+                    self.picked = Some(hotkey);
                 }
             }
         }
