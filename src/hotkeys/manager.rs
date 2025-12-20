@@ -108,7 +108,7 @@ impl HotkeyManager {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::app::{App, AppInterface};
+    use crate::os::{App, AppInterface};
     use global_hotkey::hotkey::{Code, Modifiers};
     use serial_test::serial;
 

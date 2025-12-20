@@ -1,4 +1,5 @@
-use crate::app::{App, AppInterface};
+use crate::os::App;
+use crate::os::OpenInterface;
 use anyhow::Result;
 use std::fmt::{Display, Formatter};
 

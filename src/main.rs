@@ -1,6 +1,6 @@
 mod action;
-mod app;
 mod hotkeys;
+mod os;
 mod util;
 
 use crate::hotkeys::{HotkeyManager, HotkeyPicker, PickerMessage};
@@ -8,9 +8,6 @@ use anyhow::Result;
 use iced::Element;
 use simplelog::*;
 use std::fs;
-
-#[cfg(not(any(target_os = "macos", target_os = "windows")))]
-compile_error!("This application only supports macOS and Windows");
 
 #[derive(Default)]
 struct GroupCtrl {

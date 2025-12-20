@@ -1,30 +1,7 @@
-use crate::app::AppInterface;
-use crate::util::capitalize;
-use std::fmt::{Display, Formatter};
+use crate::os::OpenInterface;
+use crate::os::windows::app::App;
 
-#[derive(Debug, Clone, Hash, PartialEq, Eq)]
-pub struct App {
-    bundle_id: String,
-}
-
-impl AppInterface for App {
-    fn new(bundle_id: &str) -> Self {
-        Self { bundle_id }
-    }
-
-    fn id(&self) -> &String {
-        self.bundle_id
-    }
-
-    fn display(&self) -> String {
-        let name = self
-            .bundle_id
-            .split(".")
-            .last()
-            .unwrap_or(self.bundle_id.as_str());
-        write!(f, "{}", capitalize(name))
-    }
-
+impl OpenInterface for App {
     fn open(&self) -> anyhow::Result<()> {
         info!("Opening app {self}");
         let workspace = NSWorkspace::sharedWorkspace();
@@ -39,12 +16,6 @@ impl AppInterface for App {
             bail!("System refused to open app at path '{app_path}'");
         }
         Ok(())
-    }
-}
-
-impl Display for App {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.display())
     }
 }
 

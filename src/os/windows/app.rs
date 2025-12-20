@@ -1,4 +1,4 @@
-use super::AppInterface;
+use crate::os::interface::AppInterface;
 use crate::util::capitalize;
 use std::fmt::{Display, Formatter};
 
@@ -16,10 +16,6 @@ impl AppInterface for App {
         Self {
             exe_path: exe_path.to_string(),
         }
-    }
-
-    fn open(&self) -> anyhow::Result<()> {
-        Ok(())
     }
 
     fn display(&self) -> String {
