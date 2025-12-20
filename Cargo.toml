@@ -4,8 +4,6 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-objc2-foundation = { version = "0.3.2", features = ["NSString", "NSURL"] }
-objc2-app-kit = { version = "0.3.2", features = ["NSWorkspace"] }
 global-hotkey = "0.7.0"
 anyhow = "1.0.100"
 crossbeam = "0.8.4"
@@ -14,3 +12,7 @@ serial_test = "3.2.0"
 log = "0.4.29"
 simplelog = "0.12.2"
 iced = "0.14.0"
+
+[target.'cfg(target_os = "macos")'.dependencies]
+objc2-foundation = { version = "0.3.2", features = ["NSString", "NSURL"] }
+objc2-app-kit = { version = "0.3.2", features = ["NSWorkspace"] }

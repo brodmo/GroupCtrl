@@ -1,26 +1,18 @@
-use crate::util::capitalize;
-use std::fmt::{Display, Formatter};
+#[cfg(target_os = "macos")]
+mod macos;
+#[cfg(target_os = "windows")]
+mod windows;
 
-#[derive(Debug, Clone, Hash, PartialEq, Eq)]
-pub struct App {
-    pub bundle_id: String,
-}
+#[cfg(target_os = "macos")]
+pub use macos::App;
+#[cfg(target_os = "windows")]
+pub use windows::App;
 
-impl Display for App {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        let name = self
-            .bundle_id
-            .split(".")
-            .last()
-            .unwrap_or(self.bundle_id.as_str());
-        write!(f, "{}", capitalize(name))
-    }
-}
+use anyhow::Result;
 
-impl App {
-    pub fn new(bundle_id: &str) -> App {
-        Self {
-            bundle_id: bundle_id.to_string(),
-        }
-    }
+pub trait AppInterface {
+    fn id(&self) -> &str;
+    fn new(id: &str) -> Self;
+    fn open(&self) -> Result<()>;
+    fn display(&self) -> String;
 }

@@ -1,5 +1,5 @@
 use crate::action::Action::OpenApp;
-use crate::app::App;
+use crate::app::{App, AppInterface};
 use crate::hotkeys::convert::convert_hotkey;
 use crate::hotkeys::{Hotkey, HotkeyManager};
 use anyhow::Error;

@@ -1,15 +1,31 @@
-use crate::app::App;
-use anyhow::{Result, bail};
-use log::info;
-use objc2_app_kit::NSWorkspace;
-use objc2_foundation::NSString;
+use crate::app::AppInterface;
+use crate::util::capitalize;
+use std::fmt::{Display, Formatter};
 
-pub trait Open {
-    fn open(&self) -> Result<()>;
+#[derive(Debug, Clone, Hash, PartialEq, Eq)]
+pub struct App {
+    bundle_id: String,
 }
 
-impl Open for App {
-    fn open(&self) -> Result<()> {
+impl AppInterface for App {
+    fn new(bundle_id: &str) -> Self {
+        Self { bundle_id }
+    }
+
+    fn id(&self) -> &String {
+        self.bundle_id
+    }
+
+    fn display(&self) -> String {
+        let name = self
+            .bundle_id
+            .split(".")
+            .last()
+            .unwrap_or(self.bundle_id.as_str());
+        write!(f, "{}", capitalize(name))
+    }
+
+    fn open(&self) -> anyhow::Result<()> {
         info!("Opening app {self}");
         let workspace = NSWorkspace::sharedWorkspace();
         let bundle_id = NSString::from_str(self.bundle_id.as_str());
@@ -23,6 +39,12 @@ impl Open for App {
             bail!("System refused to open app at path '{app_path}'");
         }
         Ok(())
+    }
+}
+
+impl Display for App {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.display())
     }
 }
 
@@ -52,7 +74,7 @@ mod tests {
 
     #[test]
     fn open_fake_app() {
-        let fake_app = App::new("test.fake.App");
+        let fake_app = App::new("test.fake.app");
         assert!(fake_app.open().is_err());
     }
 }

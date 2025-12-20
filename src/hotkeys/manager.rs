@@ -108,7 +108,7 @@ impl HotkeyManager {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::app::App;
+    use crate::app::{App, AppInterface};
     use global_hotkey::hotkey::{Code, Modifiers};
     use serial_test::serial;
 
@@ -119,7 +119,7 @@ mod tests {
         let (tx, rx) = channel::unbounded();
         let mut manager = HotkeyManager::new_with_sender(tx).unwrap();
         let hotkey = Hotkey::new(Modifiers::SUPER | Modifiers::SHIFT, Code::KeyF);
-        let action = Action::OpenApp(App::new("com.apple.finder"));
+        let action = Action::OpenApp(App::new("some-app"));
         // Act
         let result = manager.bind_hotkey(hotkey, action.clone()).unwrap();
         // Assert
@@ -135,7 +135,7 @@ mod tests {
         let (tx, rx) = channel::unbounded();
         let mut manager = HotkeyManager::new_with_sender(tx).unwrap();
         let hotkey = Hotkey::new(Modifiers::SUPER | Modifiers::SHIFT, Code::KeyF);
-        let action = Action::OpenApp(App::new("com.apple.finder"));
+        let action = Action::OpenApp(App::new("some-app"));
         // Act
         manager.bind_hotkey(hotkey, action.clone()).unwrap();
         let result = manager.bind_hotkey(hotkey, action.clone()).unwrap();
@@ -152,8 +152,8 @@ mod tests {
         let (tx, rx) = channel::unbounded();
         let mut manager = HotkeyManager::new_with_sender(tx).unwrap();
         let hotkey = Hotkey::new(Modifiers::SUPER | Modifiers::SHIFT, Code::KeyF);
-        let old_action = Action::OpenApp(App::new("com.apple.finder"));
-        let new_action = Action::OpenApp(App::new("com.apple.safari"));
+        let old_action = Action::OpenApp(App::new("some-app"));
+        let new_action = Action::OpenApp(App::new("some-other-app"));
         // Act
         manager.bind_hotkey(hotkey, old_action.clone()).unwrap();
         let result = manager.bind_hotkey(hotkey, new_action.clone()).unwrap();
@@ -171,7 +171,7 @@ mod tests {
         let mut manager = HotkeyManager::new_with_sender(tx).unwrap();
         let old_hotkey = Hotkey::new(Modifiers::SUPER | Modifiers::SHIFT, Code::KeyF);
         let new_hotkey = Hotkey::new(Modifiers::SUPER | Modifiers::SHIFT, Code::KeyG);
-        let action = Action::OpenApp(App::new("com.apple.finder"));
+        let action = Action::OpenApp(App::new("some-app"));
         // Act
         manager.bind_hotkey(old_hotkey, action.clone()).unwrap();
         let result = manager.bind_hotkey(new_hotkey, action.clone()).unwrap();
