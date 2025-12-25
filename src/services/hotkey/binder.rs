@@ -32,7 +32,7 @@ impl HotkeyBinder for DioxusBinder {
         let my_action = action.clone();
         let my_recording = self.recording.clone();
         let callback = move |state| {
-            if state == Pressed && !my_recording.load(Ordering::SeqCst) {
+            if state == Pressed && !my_recording.load(Ordering::Relaxed) {
                 let _ = my_action.execute();
             }
         };

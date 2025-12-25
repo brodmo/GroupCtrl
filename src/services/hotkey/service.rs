@@ -4,8 +4,8 @@ use std::sync::atomic::AtomicBool;
 use bimap::BiMap;
 use log::info;
 
+use super::binder::{DioxusBinder, HotkeyBinder};
 use crate::models::{Action, Hotkey};
-use crate::services::hotkey::binder::{DioxusBinder, HotkeyBinder};
 
 pub struct HotkeyService<B: HotkeyBinder = DioxusBinder> {
     bindings: BiMap<Hotkey, Action>,
