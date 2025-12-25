@@ -13,14 +13,14 @@ pub trait HotkeyBinder {
 }
 
 pub struct DioxusBinder {
-    registered_record: RecordRegistered,
+    record_registered: RecordRegistered,
     handles: HashMap<Hotkey, ShortcutHandle>,
 }
 
 impl DioxusBinder {
-    pub(super) fn new(registered_record: RecordRegistered) -> Self {
+    pub(super) fn new(record_registered: RecordRegistered) -> Self {
         Self {
-            registered_record,
+            record_registered,
             handles: HashMap::new(),
         }
     }
@@ -29,7 +29,7 @@ impl DioxusBinder {
 impl HotkeyBinder for DioxusBinder {
     fn bind_hotkey(&mut self, hotkey: Hotkey, action: &Action) -> anyhow::Result<()> {
         let my_action = action.clone();
-        let my_record = self.registered_record.clone();
+        let my_record = self.record_registered.clone();
         let callback = move |state| {
             if state == Pressed {
                 if let Some(active_record) = my_record.get() {

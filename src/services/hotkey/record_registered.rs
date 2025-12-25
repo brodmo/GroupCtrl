@@ -4,14 +4,10 @@ use crate::models::Hotkey;
 
 pub type RecordRegisteredFn = Arc<dyn Fn(Hotkey) + Send + Sync>;
 
-#[derive(Clone)]
+#[derive(Clone, Default)]
 pub struct RecordRegistered(Arc<Mutex<Option<RecordRegisteredFn>>>);
 
 impl RecordRegistered {
-    pub fn new() -> Self {
-        Self(Arc::new(Mutex::new(None)))
-    }
-
     pub fn set(&self, callback: Option<RecordRegisteredFn>) {
         *self.0.lock().unwrap() = callback;
     }

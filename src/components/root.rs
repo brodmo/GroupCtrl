@@ -8,7 +8,7 @@ use crate::services::{HotkeyService, RecordRegistered};
 
 #[component]
 pub fn Root() -> Element {
-    let record_registered = use_hook(RecordRegistered::new);
+    let record_registered = use_hook(RecordRegistered::default);
     let mut hotkey_service = use_signal(|| HotkeyService::new(record_registered.clone()));
     use_context_provider(|| record_registered.clone());
     use_context_provider(|| hotkey_service);
