@@ -1,9 +1,7 @@
-use std::collections::HashMap;
+use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, Ordering};
 
-use dioxus::desktop::window;
 use dioxus::prelude::*;
-use global_hotkey::HotKeyState;
-use log::error;
 
 use crate::components::app_selector::AppSelector;
 use crate::components::hotkey_picker::HotkeyPicker;
@@ -16,24 +14,26 @@ use crate::services::hotkey::HotkeyService;
 pub fn Root() -> Element {
     let selected_app = use_signal(|| None::<App>);
     let picked_hotkey = use_signal(|| None::<Hotkey>);
-    // has to be global because recording is global state so we can pause all hotkeys
-    // should be moved to hotkey service though because that's where it ought to be used
+
+    // We need both a signal for UI updates and an Arc<AtomicBool> for the background hotkey service
+    let recording_atomic = use_signal(|| Arc::new(AtomicBool::new(false)));
     let recording = use_signal(|| false);
 
-    // Provide recording state to child components
+    // Sync the signal to the atomic bool
+    use_effect(move || {
+        recording_atomic().store(recording(), Ordering::SeqCst);
+    });
+
+    let mut hotkey_service = use_signal(|| HotkeyService::new(recording_atomic()));
+
+    // Provide recording signal to child components (UI interaction)
     use_context_provider(|| recording);
+    use_context_provider(|| hotkey_service);
 
     use_effect(move || {
         if let (Some(app), Some(hotkey)) = (selected_app(), picked_hotkey()) {
             let action = Action::OpenApp(app);
-
-            // TODO go through hotkey service instead
-            let _ = window().create_shortcut(hotkey.0, move |state| {
-                // Only trigger on key press, not release
-                if state == HotKeyState::Pressed && !recording() {
-                    let _ = action.execute();
-                }
-            });
+            let _ = hotkey_service.write().bind_hotkey(hotkey, action);
         }
     });
 
