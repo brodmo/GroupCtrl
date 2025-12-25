@@ -1,8 +1,8 @@
 mod app;
-mod app_picker;
+mod app_dialog;
 mod format;
 mod open;
 
 pub use app::App;
-pub use app_picker::AppDialog;
+pub use app_dialog::AppDialog;
 pub use format::Format;
