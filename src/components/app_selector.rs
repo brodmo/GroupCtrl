@@ -14,7 +14,7 @@ pub fn AppSelector(mut selected_app: Signal<Option<App>>) -> Element {
     };
 
     let app_display = match selected_app() {
-        Some(app) => app.bundle_id,
+        Some(app) => app.to_string(),
         None => "No app selected".to_string(),
     };
 

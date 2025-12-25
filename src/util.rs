@@ -1,5 +1,3 @@
-pub mod convert;
-
 pub fn capitalize(s: &str) -> String {
     s.chars()
         .next()

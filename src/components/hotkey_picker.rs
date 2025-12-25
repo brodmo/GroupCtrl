@@ -1,8 +1,14 @@
 use dioxus::prelude::*;
-use global_hotkey::hotkey::Code;
 
 use crate::models::hotkey::Hotkey;
-use crate::util::convert::convert_hotkey;
+
+fn is_modifier(code: &Code) -> bool {
+    let code_str = code.to_string();
+    code_str.contains("Control")
+        || code_str.contains("Meta")
+        || code_str.contains("Alt")
+        || code_str.contains("Shift")
+}
 
 #[component]
 pub fn HotkeyPicker(mut picked_hotkey: Signal<Option<Hotkey>>) -> Element {
@@ -13,25 +19,16 @@ pub fn HotkeyPicker(mut picked_hotkey: Signal<Option<Hotkey>>) -> Element {
     };
 
     let handle_keydown = move |evt: KeyboardEvent| {
-        if !recording() {
+        let code = evt.code();
+        if !recording() || is_modifier(&code) {
             return;
         }
-
-        if let Some(hotkey) = convert_hotkey(&evt) {
-            // Only stop recording when we successfully capture a non-modifier key
-            recording.set(false);
-            log::info!("Captured hotkey: {}", hotkey);
-
-            // Escape clears the hotkey
-            if hotkey.0.key == Code::Escape {
-                picked_hotkey.set(None);
-            } else {
-                picked_hotkey.set(Some(hotkey));
-            }
+        recording.set(false);
+        picked_hotkey.set(if code == Code::Escape {
+            None
         } else {
-            // Modifier-only keys are filtered - keep recording
-            log::debug!("Ignoring modifier key: {}", evt.code());
-        }
+            Some(Hotkey::new(evt.modifiers(), code))
+        })
     };
 
     let label = if recording() {
@@ -43,11 +40,7 @@ pub fn HotkeyPicker(mut picked_hotkey: Signal<Option<Hotkey>>) -> Element {
         }
     };
 
-    let label_color = if picked_hotkey().is_none() {
-        "#888888"
-    } else {
-        "black"
-    };
+    let label_color = if label == "None" { "gray" } else { "black" };
 
     rsx! {
         div {
