@@ -11,8 +11,8 @@ simplelog = "0.12.2"
 dioxus = { version = "0.7.2", features = ["desktop"] }
 rfd = "0.16.0"
 plist = "1.8.0"
-bimap = "0.6.3"
 futures-util = "0.3.31"
+uuid = { version = "1.19.0", features = ["serde", "v4"] }
 
 [target.'cfg(target_os = "macos")'.dependencies]
 objc2-foundation = { version = "0.3.2", features = ["NSString", "NSURL"] }
@@ -20,6 +20,3 @@ objc2-app-kit = { version = "0.3.2", features = ["NSWorkspace"] }
 
 [target.'cfg(target_os = "windows")'.dependencies]
 windows = { version = "0.62.2", features = ["Win32", "Win32_UI", "Win32_UI_WindowsAndMessaging", "Win32_System", "Win32_System_Threading"] }
-
-[dev-dependencies]
-serial_test = "3.2.0"

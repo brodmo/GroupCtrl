@@ -1,32 +1,37 @@
 use std::fmt::{Display, Formatter};
 
-use crate::os::{App, Openable};
+use uuid::Uuid;
 
-#[derive(Debug, Clone, Hash, PartialEq, Eq)]
+use crate::models::group::Group;
+
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub enum Action {
-    OpenApp(App),
+    OpenGroup {
+        group_id: Uuid,
+    },
     #[cfg(test)]
     Mock(&'static str),
-}
-
-impl Action {
-    pub fn execute(&self) -> anyhow::Result<()> {
-        match self {
-            Action::OpenApp(app) => app.open()?,
-            #[cfg(test)]
-            Action::Mock(_) => {}
-        };
-        Ok(())
-    }
 }
 
 impl Display for Action {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         let msg = match self {
-            Action::OpenApp(app) => format!("Open {app}"),
+            Action::OpenGroup { group_id } => format!("Open group {group_id}"),
             #[cfg(test)]
             Action::Mock(str) => format!("Mock {str}"),
         };
         write!(f, "{msg}")
+    }
+}
+
+pub trait Actionable {
+    fn action(&self) -> Action;
+}
+
+impl Actionable for Group {
+    fn action(&self) -> Action {
+        Action::OpenGroup {
+            group_id: self.id(),
+        }
     }
 }

@@ -1,45 +1,54 @@
-use bimap::BiMap;
-use log::info;
+use dioxus::hooks::UnboundedSender;
 
-use super::binder::{DioxusBinder, HotkeyBinder};
-use super::sender::SharedHotkeySender;
-use crate::models::{Action, Hotkey};
+use crate::models::{Action, Actionable, Config, Hotkey};
+use crate::services::SharedHotkeySender;
+use crate::services::hotkey::binder::{DioxusBinder, HotkeyBinder};
 
 pub struct HotkeyService<B: HotkeyBinder = DioxusBinder> {
-    bindings: BiMap<Hotkey, Action>,
     binder: B,
 }
 
-impl HotkeyService {
-    pub fn new(record_registered_sender: SharedHotkeySender) -> Self {
+impl HotkeyService<DioxusBinder> {
+    pub fn new(
+        record_registered_sender: SharedHotkeySender,
+        action_sender: UnboundedSender<Action>,
+    ) -> Self {
         Self {
-            bindings: BiMap::new(),
-            binder: DioxusBinder::new(record_registered_sender),
+            binder: DioxusBinder::new(record_registered_sender, action_sender),
         }
     }
 }
 
 impl<B: HotkeyBinder> HotkeyService<B> {
-    /// Returns existing bind if hotkey is already in use
+    fn find_conflict(config: &Config, hotkey: Option<Hotkey>) -> Option<Action> {
+        config
+            .groups()
+            .iter()
+            .find(|group| group.hotkey == hotkey)
+            .map(|group| group.action())
+    }
+
     pub fn bind_hotkey(
         &mut self,
-        hotkey: Hotkey,
+        config: &Config,
+        hotkey: Option<Hotkey>,
+        existing_hotkey: Option<Hotkey>,
         action: Action,
-    ) -> anyhow::Result<Option<Action>> {
-        info!("Binding {hotkey} to '{action}'");
-        if let Some(previous_action) = self.bindings.get_by_left(&hotkey) {
-            if *previous_action == action {
-                return Ok(None); // equivalent to registration
-            }
-            info!("Hotkey is already assigned to {previous_action}");
-            return Ok(Some(previous_action.clone()));
+    ) -> Option<Action> {
+        if hotkey == existing_hotkey {
+            return None;
         }
-        if let Some((previous_hotkey, _)) = self.bindings.remove_by_right(&action) {
-            self.binder.unbind_hotkey(previous_hotkey);
+        if let Some(conflict) = Self::find_conflict(config, hotkey) {
+            return Some(conflict);
         }
-        self.binder.bind_hotkey(hotkey, &action)?;
-        self.bindings.insert(hotkey, action);
-        Ok(None)
+
+        if let Some(ex_hk) = existing_hotkey {
+            self.binder.unbind_hotkey(ex_hk);
+        }
+        if let Some(hk) = hotkey {
+            self.binder.bind_hotkey(hk, &action).unwrap() // TODO handle error
+        }
+        None
     }
 }
 
@@ -48,35 +57,43 @@ mod tests {
     use std::sync::{Arc, Mutex};
 
     use global_hotkey::hotkey::{Code, Modifiers};
-    use serial_test::serial;
 
     use super::super::binder::tests::MockBinder;
     use super::super::binder::tests::MockEvent::*;
     use super::*;
+    use crate::services::hotkey::binder::tests::MockEvent;
 
     impl HotkeyService<MockBinder> {
         fn new_mock(binder: MockBinder) -> Self {
-            Self {
-                bindings: BiMap::new(),
-                binder,
-            }
+            Self { binder }
         }
     }
 
+    fn setup_service() -> (HotkeyService<MockBinder>, Arc<Mutex<Vec<MockEvent>>>) {
+        let events = Arc::new(Mutex::new(Vec::new()));
+        let binder = MockBinder {
+            events: events.clone(),
+        };
+        let service = HotkeyService::new_mock(binder);
+        (service, events)
+    }
+
+    fn setup_group(config: &mut Config, hotkey: Option<Hotkey>) -> Action {
+        let group_id = config.add_group("Test".to_string());
+        config.set_hotkey(group_id, hotkey);
+        Action::OpenGroup { group_id }
+    }
+
     #[test]
-    #[serial]
     fn bind_hotkey_new() {
         // Arrange
-        let events = Arc::new(Mutex::new(Vec::new()));
-        let binder = MockBinder {
-            events: events.clone(),
-        };
-        let mut service = HotkeyService::new_mock(binder);
+        let (mut service, events) = setup_service();
+        let mut config = Config::default();
+        let action = setup_group(&mut config, None);
         let hotkey = Hotkey::new(Modifiers::SUPER | Modifiers::SHIFT, Code::KeyF);
-        let action = Action::Mock("Test");
 
         // Act
-        let result = service.bind_hotkey(hotkey, action.clone()).unwrap();
+        let result = service.bind_hotkey(&config, Some(hotkey), None, action.clone());
 
         // Assert
         assert_eq!(result, None);
@@ -84,74 +101,71 @@ mod tests {
     }
 
     #[test]
-    #[serial]
-    fn bind_hotkey_repeat() {
+    fn bind_hotkey_repeat_none() {
         // Arrange
-        let events = Arc::new(Mutex::new(Vec::new()));
-        let binder = MockBinder {
-            events: events.clone(),
-        };
-        let mut service = HotkeyService::new_mock(binder);
-        let hotkey = Hotkey::new(Modifiers::SUPER | Modifiers::SHIFT, Code::KeyF);
-        let action = Action::Mock("Test");
+        let (mut service, events) = setup_service();
+        let mut config = Config::default();
+        let action = setup_group(&mut config, None);
 
         // Act
-        service.bind_hotkey(hotkey, action.clone()).unwrap();
-        let result = service.bind_hotkey(hotkey, action.clone()).unwrap();
+        let result = service.bind_hotkey(&config, None, None, action.clone());
 
         // Assert
         assert_eq!(result, None);
-        assert_eq!(*events.lock().unwrap(), vec![Register(hotkey, action)]);
+        assert_eq!(*events.lock().unwrap(), vec![]);
     }
 
     #[test]
-    #[serial]
-    fn bind_hotkey_conflict() {
+    fn bind_hotkey_repeat_some() {
         // Arrange
-        let events = Arc::new(Mutex::new(Vec::new()));
-        let binder = MockBinder {
-            events: events.clone(),
-        };
-        let mut service = HotkeyService::new_mock(binder);
+        let (mut service, events) = setup_service();
+        let mut config = Config::default();
+        let action = setup_group(&mut config, None);
         let hotkey = Hotkey::new(Modifiers::SUPER | Modifiers::SHIFT, Code::KeyF);
-        let old_action = Action::Mock("Old");
-        let new_action = Action::Mock("New");
 
         // Act
-        service.bind_hotkey(hotkey, old_action.clone()).unwrap();
-        let result = service.bind_hotkey(hotkey, new_action).unwrap();
+        let result = service.bind_hotkey(&config, Some(hotkey), Some(hotkey), action.clone());
 
         // Assert
-        assert_eq!(result, Some(old_action.clone()));
-        assert_eq!(*events.lock().unwrap(), vec![Register(hotkey, old_action)]);
+        assert_eq!(result, None);
+        assert_eq!(*events.lock().unwrap(), vec![]);
     }
 
     #[test]
-    #[serial]
     fn bind_hotkey_change() {
         // Arrange
-        let events = Arc::new(Mutex::new(Vec::new()));
-        let binder = MockBinder {
-            events: events.clone(),
-        };
-        let mut service = HotkeyService::new_mock(binder);
+        let (mut service, events) = setup_service();
         let old_hotkey = Hotkey::new(Modifiers::SUPER | Modifiers::SHIFT, Code::KeyF);
         let new_hotkey = Hotkey::new(Modifiers::SUPER | Modifiers::SHIFT, Code::KeyG);
-        let action = Action::Mock("Test");
+        let mut config = Config::default();
+        let action = setup_group(&mut config, Some(old_hotkey));
 
         // Act
-        service.bind_hotkey(old_hotkey, action.clone()).unwrap();
-        let result = service.bind_hotkey(new_hotkey, action.clone()).unwrap();
+        let result =
+            service.bind_hotkey(&config, Some(new_hotkey), Some(old_hotkey), action.clone());
 
         // Assert
         assert_eq!(result, None);
         assert_eq!(
             *events.lock().unwrap(),
-            vec![
-                Register(old_hotkey, action.clone()),
-                Unregister(old_hotkey),
-                Register(new_hotkey, action)
-            ]
+            vec![Unregister(old_hotkey), Register(new_hotkey, action)]
         );
+    }
+
+    #[test]
+    fn bind_hotkey_conflict() {
+        // Arrange
+        let (mut service, events) = setup_service();
+        let hotkey = Hotkey::new(Modifiers::SUPER | Modifiers::SHIFT, Code::KeyF);
+        let mut config = Config::default();
+        let old_action = setup_group(&mut config, Some(hotkey));
+        let new_action = setup_group(&mut config, None);
+
+        // Act
+        let result = service.bind_hotkey(&config, Some(hotkey), None, new_action);
+
+        // Assert
+        assert_eq!(result, Some(old_action.clone()));
+        assert_eq!(*events.lock().unwrap(), vec![]);
     }
 }
