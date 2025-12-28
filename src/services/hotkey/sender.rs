@@ -4,15 +4,19 @@ use dioxus::prelude::UnboundedSender;
 
 use crate::models::Hotkey;
 
-#[derive(Clone, Default)]
-pub struct SharedHotkeySender(Arc<Mutex<Option<UnboundedSender<Hotkey>>>>);
+#[derive(Clone)]
+pub struct SharedSender<T>(Arc<Mutex<Option<UnboundedSender<T>>>>);
 
-impl SharedHotkeySender {
-    pub fn set(&self, sender: Option<UnboundedSender<Hotkey>>) {
+impl<T> SharedSender<T> {
+    pub fn new() -> Self {
+        Self(Arc::new(Mutex::new(None)))
+    }
+
+    pub fn set(&self, sender: Option<UnboundedSender<T>>) {
         *self.0.lock().unwrap() = sender;
     }
 
-    pub(super) fn get(&self) -> Option<UnboundedSender<Hotkey>> {
+    pub(super) fn get(&self) -> Option<UnboundedSender<T>> {
         self.0.lock().unwrap().clone()
     }
 }

@@ -1,7 +1,7 @@
 use dioxus::hooks::UnboundedSender;
 
 use crate::models::{Action, Actionable, Config, Hotkey};
-use crate::services::SharedHotkeySender;
+use crate::services::SharedSender;
 use crate::services::hotkey::binder::{DioxusBinder, HotkeyBinder};
 
 pub struct HotkeyService<B: HotkeyBinder = DioxusBinder> {
@@ -10,8 +10,8 @@ pub struct HotkeyService<B: HotkeyBinder = DioxusBinder> {
 
 impl HotkeyService<DioxusBinder> {
     pub fn new(
-        record_registered_sender: SharedHotkeySender,
-        action_sender: UnboundedSender<Action>,
+        record_registered_sender: SharedSender<Hotkey>,
+        action_sender: SharedSender<Action>,
     ) -> Self {
         Self {
             binder: DioxusBinder::new(record_registered_sender, action_sender),

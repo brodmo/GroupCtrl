@@ -5,4 +5,4 @@ mod hotkey;
 
 pub use action::ActionService;
 pub use config::ConfigService;
-pub use hotkey::{HotkeyService, SharedHotkeySender};
+pub use hotkey::{HotkeyService, SharedSender};

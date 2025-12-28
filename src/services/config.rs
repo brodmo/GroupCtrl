@@ -1,8 +1,9 @@
+use dioxus::hooks::UnboundedSender;
 use uuid::Uuid;
 
 use crate::models::{Action, Config, Group, Hotkey};
 use crate::os::App;
-use crate::services::HotkeyService;
+use crate::services::{HotkeyService, SharedSender};
 
 pub struct ConfigService {
     config: Config,
@@ -10,6 +11,16 @@ pub struct ConfigService {
 }
 
 impl ConfigService {
+    pub fn new(
+        record_registered_sender: SharedSender<Hotkey>,
+        action_sender: SharedSender<Action>,
+    ) -> Self {
+        Self {
+            config: Config::default(),
+            hotkey_service: HotkeyService::new(record_registered_sender, action_sender),
+        }
+    }
+
     pub fn groups(&self) -> &Vec<Group> {
         &self.config.groups()
     }

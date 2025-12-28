@@ -2,7 +2,7 @@ use dioxus::prelude::*;
 use futures_util::StreamExt;
 
 use crate::models::Hotkey;
-use crate::services::SharedHotkeySender;
+use crate::services::SharedSender;
 use crate::util::is_modifier;
 
 #[component]
@@ -64,7 +64,7 @@ fn use_record_registered(mut recording: Signal<bool>, mut picked_hotkey: Signal<
             picked_hotkey.set(Some(hotkey));
         }
     });
-    let record_registered_sender = use_context::<SharedHotkeySender>();
+    let record_registered_sender = use_context::<SharedSender<Hotkey>>();
     use_effect(move || {
         record_registered_sender.set(if !recording() {
             None

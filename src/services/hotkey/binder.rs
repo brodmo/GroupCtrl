@@ -5,7 +5,7 @@ use dioxus::desktop::{ShortcutHandle, window};
 use dioxus::hooks::UnboundedSender;
 use global_hotkey::HotKeyState::Pressed;
 
-use super::sender::SharedHotkeySender;
+use super::sender::SharedSender;
 use crate::models::{Action, Hotkey};
 
 pub trait HotkeyBinder {
@@ -14,15 +14,15 @@ pub trait HotkeyBinder {
 }
 
 pub struct DioxusBinder {
-    record_registered_sender: SharedHotkeySender,
-    action_sender: UnboundedSender<Action>,
+    record_registered_sender: SharedSender<Hotkey>,
+    action_sender: SharedSender<Action>,
     handles: HashMap<Hotkey, ShortcutHandle>,
 }
 
 impl DioxusBinder {
     pub(super) fn new(
-        record_registered_sender: SharedHotkeySender,
-        action_sender: UnboundedSender<Action>,
+        record_registered_sender: SharedSender<Hotkey>,
+        action_sender: SharedSender<Action>,
     ) -> Self {
         Self {
             record_registered_sender,
@@ -42,7 +42,10 @@ impl HotkeyBinder for DioxusBinder {
                 if let Some(sender) = my_recorded_register_sender.get() {
                     let _ = sender.unbounded_send(hotkey);
                 } else {
-                    let _ = my_action_sender.unbounded_send(my_action.clone());
+                    let _ = my_action_sender
+                        .get()
+                        .unwrap()
+                        .unbounded_send(my_action.clone());
                 }
             }
         };

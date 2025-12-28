@@ -3,19 +3,19 @@ use futures_util::StreamExt;
 
 use super::app_selector::AppSelector;
 use super::hotkey_picker::HotkeyPicker;
-use crate::models::{Action, Config, Hotkey};
+use crate::models::{Action, Hotkey};
 use crate::os::App;
-use crate::services::{ActionService, ConfigService, HotkeyService, SharedHotkeySender};
+use crate::services::{ActionService, ConfigService, SharedSender};
 
 #[component]
 pub fn Root() -> Element {
-    let registered_record_sender = use_hook(SharedHotkeySender::default);
-    let config = use_signal(|| Config::default());
-    let action_sender = use_action_listener(config);
-    // let config_service = use_signal(|| ConfigService::)
-    let hotkey_service =
-        use_signal(|| HotkeyService::new(registered_record_sender.clone(), action_sender));
-    use_context_provider(|| registered_record_sender); // provide to hotkey pickers
+    let registered_record_sender = use_hook(|| SharedSender::new());
+    let action_sender = use_hook(|| SharedSender::new());
+    let config_service =
+        use_signal(|| ConfigService::new(registered_record_sender.clone(), action_sender.clone()));
+    action_sender.set(Some(use_action_listener(config_service)));
+    use_context_provider(|| registered_record_sender);
+    use_context_provider(|| action_sender);
 
     let picked_hotkey = use_signal(|| None::<Hotkey>);
     let selected_app = use_signal(|| None::<App>);
@@ -37,11 +37,11 @@ pub fn Root() -> Element {
     }
 }
 
-fn use_action_listener(config: Signal<Config>) -> UnboundedSender<Action> {
+fn use_action_listener(config_service: Signal<ConfigService>) -> UnboundedSender<Action> {
     let listener = use_coroutine(move |mut receiver: UnboundedReceiver<Action>| async move {
         let mut action_service = ActionService::default();
         while let Some(action) = receiver.next().await {
-            action_service.execute(&config.read(), &action)
+            action_service.execute(&config_service.read(), &action)
         }
     });
     listener.tx()
