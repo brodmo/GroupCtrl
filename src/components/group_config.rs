@@ -26,6 +26,7 @@ pub fn GroupConfig(config_service: Signal<ConfigService>, group_id: Uuid) -> Ele
         service.set_hotkey(group_id, hotkey);
     });
 
+    // TODO extract to use_app_list_change_listener (see root)
     let handle_app_list_change = use_coroutine(
         move |mut receiver: UnboundedReceiver<CellChange<String>>| async move {
             while let Some(cc) = receiver.next().await {
@@ -47,6 +48,7 @@ pub fn GroupConfig(config_service: Signal<ConfigService>, group_id: Uuid) -> Ele
     );
     use_context_provider(|| handle_app_list_change.tx()); // used in the (generic) list
 
+    // TODO extract to group_name.rs
     let name = move || config_service.read().group(group_id).unwrap().name.clone();
     let mut draft_name = use_signal(|| name());
     let mut input_handle = use_signal(|| None::<Rc<MountedData>>);

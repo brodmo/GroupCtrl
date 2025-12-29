@@ -53,6 +53,7 @@ where
     }
 }
 
+// TODO extract to lists/cell.rs
 #[component]
 fn Cell<E, I>(element: E, mut selected: Signal<HashSet<I>>) -> Element
 where
