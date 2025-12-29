@@ -20,8 +20,8 @@ pub fn Root() -> Element {
     use_context_provider(|| registered_record_sender);
     use_context_provider(|| action_sender);
 
-    use_groups_list_change_handler(config_service);
-    let mut selected = use_signal(|| HashSet::<Uuid>::new());
+    let selected = use_signal(|| HashSet::<Uuid>::new());
+    use_groups_list_change_handler(config_service, selected);
     let active_group = use_memo(move || {
         let sel = selected.read();
         if sel.len() == 1 {
@@ -49,14 +49,20 @@ pub fn Root() -> Element {
     }
 }
 
-fn use_groups_list_change_handler(mut config_service: Signal<ConfigService>) {
+fn use_groups_list_change_handler(
+    mut config_service: Signal<ConfigService>,
+    mut selected: Signal<HashSet<Uuid>>,
+) {
     let handle_app_change = use_coroutine(
         move |mut receiver: UnboundedReceiver<CellChange<Uuid>>| async move {
             while let Some(cc) = receiver.next().await {
                 let mut cs = config_service.write();
                 match cc {
                     CellChange::Add => {
-                        cs.add_group("New Group".to_string());
+                        let group_id = cs.add_group("New Group".to_string());
+                        let mut sel = selected.write();
+                        sel.clear();
+                        sel.insert(group_id);
                     }
                     CellChange::Remove(groups) => {
                         for group_id in groups {

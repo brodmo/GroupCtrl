@@ -2,7 +2,7 @@ use std::fmt::{Display, Formatter};
 
 use global_hotkey::hotkey::{Code, HotKey as GlobalHotkey, Modifiers};
 
-use crate::os::{Format, Formatting};
+use crate::os::{Keyboard, KeyboardBehavior};
 
 #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq)]
 pub struct Hotkey(pub GlobalHotkey); // We need the GlobalHotkey for registration
@@ -15,7 +15,7 @@ impl Hotkey {
 
 impl Display for Hotkey {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        for (modifier, text) in Format::modifiers() {
+        for (modifier, text) in Keyboard::modifier_format() {
             if self.0.mods.contains(modifier) {
                 write!(f, "{}", text)?;
             }

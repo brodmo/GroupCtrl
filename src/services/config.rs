@@ -24,7 +24,7 @@ impl ConfigService {
         self.config.groups()
     }
 
-    pub fn group(&self, group_id: Uuid) -> &Group {
+    pub fn group(&self, group_id: Uuid) -> Option<&Group> {
         self.config.group(group_id)
     }
 
@@ -49,7 +49,7 @@ impl ConfigService {
     }
 
     pub fn set_hotkey(&mut self, group_id: Uuid, hotkey: Option<Hotkey>) -> Option<Action> {
-        let (existing_hotkey, action) = self.config.get_binding(group_id);
+        let (existing_hotkey, action) = self.config.get_binding(group_id).unwrap();
         let conflict =
             self.hotkey_service
                 .bind_hotkey(&self.config, hotkey, existing_hotkey, action);

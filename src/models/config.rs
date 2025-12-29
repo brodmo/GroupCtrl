@@ -31,8 +31,9 @@ impl Config {
         self.groups.retain(|g| g.id() != group_id)
     }
 
-    pub fn group(&self, group_id: Uuid) -> &Group {
-        self.groups.iter().find(|g| g.id() == group_id).unwrap()
+    pub fn group(&self, group_id: Uuid) -> Option<&Group> {
+        // TODO add better error handling
+        self.groups.iter().find(|g| g.id() == group_id)
     }
 
     fn group_mut(&mut self, group_id: Uuid) -> &mut Group {
@@ -54,9 +55,9 @@ impl Config {
         group.remove_app(app_id)
     }
 
-    pub fn get_binding(&self, group_id: Uuid) -> (Option<Hotkey>, Action) {
-        let group = self.group(group_id);
-        group.binding()
+    pub fn get_binding(&self, group_id: Uuid) -> Option<(Option<Hotkey>, Action)> {
+        let group = self.group(group_id)?;
+        Some(group.binding())
     }
 
     pub fn set_hotkey(&mut self, group_id: Uuid, hotkey: Option<Hotkey>) {

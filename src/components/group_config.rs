@@ -10,14 +10,21 @@ use crate::services::ConfigService;
 
 #[component]
 pub fn GroupConfig(config_service: Signal<ConfigService>, group_id: Uuid) -> Element {
-    let picked_hotkey = use_signal(|| config_service.read().group(group_id).hotkey.clone());
+    let picked_hotkey = use_signal(|| {
+        config_service
+            .read()
+            .group(group_id)
+            .unwrap()
+            .hotkey
+            .clone()
+    });
     use_effect(move || {
         let hotkey = *picked_hotkey.read();
         let mut service = config_service.write();
         service.set_hotkey(group_id, hotkey);
     });
 
-    let handle_app__list_change = use_coroutine(
+    let handle_app_list_change = use_coroutine(
         move |mut receiver: UnboundedReceiver<CellChange<String>>| async move {
             while let Some(cc) = receiver.next().await {
                 let mut cs = config_service.write();
@@ -36,10 +43,15 @@ pub fn GroupConfig(config_service: Signal<ConfigService>, group_id: Uuid) -> Ele
             }
         },
     );
-    use_context_provider(|| handle_app__list_change.tx()); // used in the (generic) list
+    use_context_provider(|| handle_app_list_change.tx()); // used in the (generic) list
 
-    let name = config_service.read().group(group_id).name.clone();
-    let apps = config_service.read().group(group_id).apps().to_vec();
+    let name = config_service.read().group(group_id).unwrap().name.clone();
+    let apps = config_service
+        .read()
+        .group(group_id)
+        .unwrap()
+        .apps()
+        .to_vec();
     rsx! {
         div {
         ul {

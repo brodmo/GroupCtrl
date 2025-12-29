@@ -4,6 +4,7 @@ use std::hash::Hash;
 use dioxus::prelude::*;
 
 use crate::components::list_cell::ListCell;
+use crate::os::{Keyboard, KeyboardBehavior};
 
 #[component]
 pub fn List<E, I>(elements: Vec<E>, selected: Signal<HashSet<I>>) -> Element
@@ -37,7 +38,9 @@ where
         let _ = sender.unbounded_send(CellChange::Add);
     };
     let remove = move |_| {
-        let _ = my_sender.unbounded_send(CellChange::Remove(selected.read().clone()));
+        let selection = selected.read().clone();
+        selected.clear();
+        let _ = my_sender.unbounded_send(CellChange::Remove(selection));
     };
     rsx! {
         div {
@@ -65,12 +68,17 @@ where
 {
     let element_id = element.id();
     let is_selected = selected.read().contains(&element_id);
-    let toggle_active = move |_| {
+    let toggle_active = move |evt: Event<MouseData>| {
         let mut sel = selected.write();
-        if !sel.contains(&element_id) {
-            sel.insert(element_id.clone());
+        if Keyboard::is_multi_select(evt.modifiers()) {
+            if !sel.contains(&element_id) {
+                sel.insert(element_id.clone());
+            } else {
+                sel.remove(&element_id);
+            }
         } else {
-            sel.remove(&element_id);
+            sel.clear();
+            sel.insert(element_id.clone());
         }
     };
     rsx! {

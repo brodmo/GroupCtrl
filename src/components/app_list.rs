@@ -4,6 +4,7 @@ use dioxus::prelude::*;
 
 use crate::components::list::List;
 use crate::components::list_cell::ListCell;
+use crate::models::Identifiable;
 use crate::os::App;
 
 #[component]
@@ -21,7 +22,7 @@ pub fn AppList(apps: Vec<App>) -> Element {
 impl ListCell<String> for App {
     fn render(&self) -> Element {
         rsx! {
-            span { "{self.display()}" }
+            span { "{self.id()}" }
         }
     }
 }
