@@ -6,19 +6,12 @@ use crate::models::Hotkey;
 use crate::models::traits::Identifiable;
 use crate::os::App;
 
-#[derive(Debug, Eq, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub struct Group {
     id: Uuid,
     pub name: String,
     pub hotkey: Option<Hotkey>,
     apps: Vec<App>,
-}
-
-impl PartialEq for Group {
-    fn eq(&self, other: &Self) -> bool {
-        // Re-render of name changes
-        self.id == other.id && self.name == other.name
-    }
 }
 
 impl Identifiable<Uuid> for Group {

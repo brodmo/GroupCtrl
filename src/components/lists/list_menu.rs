@@ -27,6 +27,7 @@ where
         selected.clear();
         let _ = my_sender.unbounded_send(ListOperation::Remove(selection));
     };
+
     rsx! {
         div {
             class: "flex",

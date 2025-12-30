@@ -9,27 +9,21 @@ use crate::services::ConfigService;
 
 #[component]
 pub fn GroupConfig(config_service: Signal<ConfigService>, group_id: Uuid) -> Element {
-    let picked_hotkey = use_signal(|| config_service.read().group(group_id).unwrap().hotkey);
+    let group = use_memo(move || config_service.read().group(group_id).unwrap().clone());
+    let picked_hotkey = use_signal(|| group().hotkey);
     use_effect(move || {
         config_service.write().set_hotkey(group_id, picked_hotkey());
     });
-
-    let name = use_signal(|| config_service.read().group(group_id).unwrap().name.clone());
+    let name = use_signal(|| group().name.clone());
     use_effect(move || config_service.write().set_name(group_id, name()));
-
     use_app_list_listener(config_service, group_id);
-    let apps = config_service
-        .read()
-        .group(group_id)
-        .unwrap()
-        .apps()
-        .to_vec();
+
     rsx! {
         div {
             class: "flex flex-col gap-2",
             EditableText { text: name }
             HotkeyPicker { picked_hotkey }
-            AppList { apps }
+            AppList { apps: group().apps().to_vec() }
         }
     }
 }
